@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
@@ -17,6 +20,7 @@ import com.badlogic.gdx.math.Rectangle;
 public class Main extends ApplicationAdapter {
 	SpriteBatch batch;
 	Texture img,star;
+	BitmapFont font;
 	GameObject2D plane1,plane2;
 	long frame;
 	float speed;
@@ -46,6 +50,7 @@ public class Main extends ApplicationAdapter {
 		plane2=new GameObject2D((int)(1600/10d-(17d/2)), (int)(900/2d-(17/2d)), new TextureRegion(img, 17*3-1, 17*2-1, 17*3, 17), 17, 17,3,5);
 		frame=0;
 		paused=false;
+		font=new BitmapFont(Gdx.files.internal("fonts/ubuntu.fnt"));
 	}
 
 	@Override
@@ -88,6 +93,9 @@ public class Main extends ApplicationAdapter {
 		frame++;
 		}else {
 			batch.draw(pauseBackground, 0, 0, 1600, 900);
+			GlyphLayout g=new GlyphLayout(font, "Paused");
+			font.setColor(Color.WHITE);
+			font.draw(batch, "Paused", 800-g.width/2, 450-g.height/2);
 			}
 		if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
 			paused=!paused;
