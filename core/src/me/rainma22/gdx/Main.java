@@ -95,7 +95,7 @@ public class Main extends ApplicationAdapter {
 			batch.draw(pauseBackground, 0, 0, 1600, 900);
 			GlyphLayout g=new GlyphLayout(font, "Paused");
 			font.setColor(Color.WHITE);
-			font.draw(batch, "Paused", 800-g.width/2, 450-g.height/2);
+			font.draw(batch, "Paused", 1600/2-g.width/2, 900/5*4-g.height/2);
 			}
 		if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
 			paused=!paused;
