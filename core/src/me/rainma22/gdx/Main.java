@@ -19,21 +19,23 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Main extends ApplicationAdapter {
 	SpriteBatch batch;
-	Texture img,star;
+	Texture img,star,asteroid;
 	BitmapFont font;
 	GameObject2D plane1,plane2;
 	long frame;
-	float speed;
-	boolean up,paused;
+	float speed,difficulty,floatCounter,score;
+	boolean up,paused,died;
 	Texture pauseBackground;
 	OrthographicCamera camera;
-	public ArrayList<Rectangle> stars;
+	ArrayList<Rectangle> stars; ArrayList<GameObject2D> obstacles;
 	@Override
 	public void create () {
-		camera=new OrthographicCamera(1600,900);
-		speed=1;
+		camera=new OrthographicCamera(2,2);
+		//camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+		speed=4;
 		batch = new SpriteBatch();
 		img = new Texture("Shooter_SpriteSheet.png");
+		asteroid=new Texture("Asteroid.png");
 		Pixmap pixmap=new Pixmap(1,1,Format.RGBA4444);
 		pixmap.setColor(1, 1, 1, 1);
 		pixmap.fill();
@@ -46,17 +48,22 @@ public class Main extends ApplicationAdapter {
 		pixmap.setColor(0,0,0,0.58823529411f);
 		pixmap.fill();
 		pauseBackground=new Texture(pixmap);
-		plane1= new GameObject2D((int)(1600/10d-(17d/2)), (int)(900/2d-(17/2d)), new TextureRegion(img, 0, 17*2-1, 17*3, 17), 17, 17,3,5);
-		plane2=new GameObject2D((int)(1600/10d-(17d/2)), (int)(900/2d-(17/2d)), new TextureRegion(img, 17*3-1, 17*2-1, 17*3, 17), 17, 17,3,5);
+		obstacles=new ArrayList<>();
+		plane1= new GameObject2D((int)(1600/12d-(17d/2)), (int)(900/2d-(17/2d)), new TextureRegion(img, 0, 17*2-1, 17*3, 17), 17, 17,3,5f);
+		plane2=new GameObject2D((int)(1600/12d-(17d/2)), (int)(900/2d-(17/2d)), new TextureRegion(img, 17*3-1, 17*2-1, 17*3, 17), 17, 17,3,5);
 		frame=0;
-		paused=false;
-		font=new BitmapFont(Gdx.files.internal("fonts/ubuntu.fnt"));
+		difficulty=.5f;
+		floatCounter=1;
+		score=0;
+		paused=false;died=false;
+		font=new BitmapFont(Gdx.files.internal("Fonts/Ubuntu.fnt"));
 	}
 
 	@Override
 	public void render () {
 		camera.update();
-		batch.setTransformMatrix(camera.view);
+		batch.setTransformMatrix(camera.combined);
+		
 		batch.begin();
 		Gdx.gl.glClearColor(0, 0, 0.11764705882f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -66,9 +73,14 @@ public class Main extends ApplicationAdapter {
 		}
 		batch.draw(plane1.getPreviousTexture(frame), plane1.x, plane1.y,plane1.width/2,plane1.height/2,plane1.width,plane1.height,plane1.scale,plane1.scale,-90f);
 		batch.draw(plane2.getPreviousTexture(frame), plane2.x, plane2.y,plane2.width/2,plane2.height/2,plane2.width,plane2.height,plane2.scale,plane2.scale,-90f);
+		GlyphLayout g=new GlyphLayout(font, Integer.toString((int)score));
+		font.setColor(Color.WHITE);
+		font.draw(batch, Integer.toString((int)score), 1600/2-g.width/2, 900/14*13-g.height/2);
 		if (!paused) {
 		int t=(int)(5*speed+0.5f);
-		if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+		if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+			paused=true;
+		}else if (Gdx.input.isKeyJustPressed(Input.Keys.ANY_KEY)) {
 			up=!up;
 		}
 		if (up) {
@@ -83,30 +95,36 @@ public class Main extends ApplicationAdapter {
 		for (int i = 0; i < stars.size(); i++) {
 			Rectangle r=stars.get(i);
 			//batch.draw(star, r.getX(), r.getY(), r.getWidth(), r.getHeight());
-			r.x-=r.getWidth();
+			r.x-=r.getWidth()*speed/2;
 			if (r.x<=0) {
 				r.x=1600;
 			}
 			stars.set(i, r);
 		}
-		
 		frame++;
+		floatCounter+=0.00002777777f;
+		difficulty=.5f*floatCounter;
+		speed=difficulty*4;
+		score+=difficulty;
+		
 		}else {
 			batch.draw(pauseBackground, 0, 0, 1600, 900);
-			GlyphLayout g=new GlyphLayout(font, "Paused");
+			g=new GlyphLayout(font, "Paused");
 			font.setColor(Color.WHITE);
 			font.draw(batch, "Paused", 1600/2-g.width/2, 900/5*4-g.height/2);
+			if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+				paused=false;
 			}
-		if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-			paused=!paused;
-		}
+			}
 		batch.end();
-		
 	}
 	
 	@Override
 	public void dispose () {
 		batch.dispose();
 		img.dispose();
+		star.dispose();
+		asteroid.dispose();
+		pauseBackground.dispose();
 	}
 }
