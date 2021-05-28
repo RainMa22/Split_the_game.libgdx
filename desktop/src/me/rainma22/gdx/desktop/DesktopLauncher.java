@@ -8,8 +8,8 @@ import me.rainma22.gdx.Main;
 public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		config.width=1600;
-		config.height=900;
+		config.width=853;
+		config.height=480;
 		config.fullscreen=true;
 		config.title="Split!";
 		new LwjglApplication(new Main(), config);

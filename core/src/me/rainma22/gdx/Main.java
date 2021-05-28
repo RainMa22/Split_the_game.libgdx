@@ -1,10 +1,12 @@
 package me.rainma22.gdx;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -13,9 +15,13 @@ import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class Main extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -30,8 +36,13 @@ public class Main extends ApplicationAdapter {
 	ArrayList<Rectangle> stars; ArrayList<GameObject2D> obstacles;
 	@Override
 	public void create () {
-		camera=new OrthographicCamera(2,2);
-		//camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+		camera=new OrthographicCamera(1600f,900f);
+		camera.setToOrtho(false,1600f,900f);
+		camera.lookAt(800, 450,0);
+		//camera=new OrthographicCamera(MathUtils.round(2*(1600f/Gdx.graphics.getWidth())), MathUtils.round(2*(900f/Gdx.graphics.getHeight())));
+		//camera=new OrthographicCamera();
+		camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+		//resize(MathUtils.round(1600*(1600f/Gdx.graphics.getWidth())), MathUtils.round(900*(900f/Gdx.graphics.getHeight())));
 		speed=4;
 		batch = new SpriteBatch();
 		img = new Texture("Shooter_SpriteSheet.png");
@@ -49,8 +60,8 @@ public class Main extends ApplicationAdapter {
 		pixmap.fill();
 		pauseBackground=new Texture(pixmap);
 		obstacles=new ArrayList<>();
-		plane1= new GameObject2D((int)(1600/12d-(17d/2)), (int)(900/2d-(17/2d)), new TextureRegion(img, 0, 17*2-1, 17*3, 17), 17, 17,3,5f);
-		plane2=new GameObject2D((int)(1600/12d-(17d/2)), (int)(900/2d-(17/2d)), new TextureRegion(img, 17*3-1, 17*2-1, 17*3, 17), 17, 17,3,5);
+		plane1= new GameObject2D((1600/12f-(17f/2)), (900/2f-(17/2f)), new TextureRegion(img, 0, 17*2-1, 17*3, 17), 17, 17,3,5f);
+		plane2=new GameObject2D((1600/12f-(17f/2)), (900/2f-(17/2f)), new TextureRegion(img, 17*3-1, 17*2-1, 17*3, 17), 17, 17,3,5);
 		frame=0;
 		difficulty=.5f;
 		floatCounter=1;
@@ -62,8 +73,9 @@ public class Main extends ApplicationAdapter {
 	@Override
 	public void render () {
 		camera.update();
-		batch.setTransformMatrix(camera.combined);
-		
+		//resize(MathUtils.round(1600*(1600f/Gdx.graphics.getWidth())), MathUtils.round(900*(900f/Gdx.graphics.getHeight())));
+		//resize((int)frame, (int)frame/16*9);
+		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 		Gdx.gl.glClearColor(0, 0, 0.11764705882f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -116,7 +128,9 @@ public class Main extends ApplicationAdapter {
 				paused=false;
 			}
 			}
+		
 		batch.end();
+		
 	}
 	
 	@Override
