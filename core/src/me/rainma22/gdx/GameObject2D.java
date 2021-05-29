@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 
 public class GameObject2D {
+	long prev=-1;
 	float x,y,z;
 	TextureRegion texture;
 	float width,height;
@@ -12,7 +13,7 @@ public class GameObject2D {
 	private Rectangle rect;
 	int fps;
 	float scale;
-	float rotation;
+	float rotation,runit;
 	public GameObject2D(float x,float y,TextureRegion t,float width,float height,int fps,float scale) {
 		this.x=x;this.y=y;texture=t; this.width=width;this.height=height;
 		xmax=(int)(t.getRegionWidth()/width);ymax=(int)(t.getRegionHeight()/height);
@@ -38,8 +39,17 @@ public class GameObject2D {
 		xcounter=beginCounter%xmax;
 		ycounter=(beginCounter/xmax)%ymax;
 		this.rotation=rotation;
+		runit=rotation;
 	}
 	public TextureRegion getNextTexture(long i) {
+		if (prev==i) {
+			xcounter--;
+			if (xcounter<=0) {
+				ycounter--;
+				xcounter=xmax-1;
+				if(ycounter<0) ycounter=ymax-1;
+			}
+		}
 		TextureRegion tr=new TextureRegion(texture, (int)(width*xcounter), (int)(height*ycounter), (int)width, (int)height);
 		if((double)i %(60d/fps)==0)
 			xcounter++;
@@ -48,9 +58,18 @@ public class GameObject2D {
 			xcounter=0;
 			ycounter%=ymax;
 		}
+		prev=i;
 		return(tr);
 	}
 	public TextureRegion getPreviousTexture(long i) {
+		if (prev==i) {
+			xcounter++;
+			if (xcounter>=xmax) {
+				ycounter++;
+				xcounter=0;
+				ycounter%=ymax;
+			}
+		}
 		TextureRegion tr=new TextureRegion(texture, (int)(width*xcounter), (int)(height*ycounter), (int)width, (int)height);
 		if((double)i %(60d/fps)==0)
 			xcounter--;
@@ -60,6 +79,7 @@ public class GameObject2D {
 			if(ycounter<0) ycounter=ymax-1;
 //System.out.println(xcounter+":"+ycounter);
 		}
+		prev=i;
 		return(tr);
 	}
 	public float getX() {
