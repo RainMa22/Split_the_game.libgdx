@@ -82,6 +82,9 @@ public class GameObject2D {
 		prev=i;
 		return(tr);
 	}
+	public void update(){
+		rect.set(x, y, width*scale ,height*scale);
+	}
 	public float getX() {
 		return this.x;
 	}
