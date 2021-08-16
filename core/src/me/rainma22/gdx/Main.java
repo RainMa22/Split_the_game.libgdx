@@ -276,7 +276,7 @@ public class Main extends ApplicationAdapter implements InputProcessor {
                         this.create();
                         return true;
                     } else {
-                        System.exit(0);
+                        Gdx.app.exit();
                     }
             }
         }
@@ -309,7 +309,7 @@ public class Main extends ApplicationAdapter implements InputProcessor {
                 this.create();
                 return true;
             } else {
-                System.exit(0);
+                Gdx.app.exit();
             }
         }
         return false;
