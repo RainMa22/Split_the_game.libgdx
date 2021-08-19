@@ -38,7 +38,8 @@ public class Main extends ApplicationAdapter implements InputProcessor {
     Map<String, Rectangle> fontColliders;
     Music[] musics;
     Music sfx;
-    int currentMusic;
+    int currentMusic, currentPlanet;
+    GameObject2D[] planets;
 
     @Override
     public void create() {
@@ -65,8 +66,12 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         pixmap.fill();
         pauseBackground = new Texture(pixmap);
         obstacles = new ArrayList<>();
-        plane1 = new GameObject2D((1920 / 15f - (17f / 2)), (1080 / 2f - (17 / 2f)), new TextureRegion(img, 0, 17 * 2 - 1, 17 * 3, 17), 17, 17, 3, 5f);
-        plane2 = new GameObject2D((1920 / 15f - (17f / 2)), (1080 / 2f - (17 / 2f)), new TextureRegion(img, 17 * 3 - 1, 17 * 2 - 1, 17 * 3, 17), 17, 17, 3, 5f);
+        plane1 = new GameObject2D((1920 / 15f - (17f / 2)), (1080 / 2f - (17 / 2f)),
+                new TextureRegion(img, 0, 17 * 2 - 1, 17 * 3, 17),
+                17, 17, 3, 5f);
+        plane2 = new GameObject2D((1920 / 15f - (17f / 2)), (1080 / 2f - (17 / 2f)),
+                new TextureRegion(img, 17 * 3 - 1, 17 * 2 - 1,
+                        17 * 3, 17), 17, 17, 3, 5f);
         frame = 0;
         difficulty = 5f;
         speed = 5f * difficulty;
@@ -91,7 +96,15 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         for (int i = 0; i < handles.length; i++) {
             musics[i]=Gdx.audio.newMusic(handles[i]);
         }
+        planets = new GameObject2D[9];
+        float[] plantScales= new float[]{10,2,3,5,4,6,15,6,3};
+        for(int i = 0; i < 9; i++){
+            planets[i]=new GameObject2D(1920,MathUtils.random((1080-(100*plantScales[i]))/2f,(100*plantScales[i])/2f),
+                    new TextureRegion(new Texture("planet"+i+".png")),100,
+                    100 ,12 ,plantScales[i]);
+        }
         currentMusic = 0;
+        currentPlanet = 0;
         musics[currentMusic].play();
         Gdx.input.setInputProcessor(this);
     }
@@ -112,23 +125,27 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         batch.begin();
         Gdx.gl.glClearColor(0, 0, 0.11764705882f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        for (int i = 0; i < stars.size(); i++) {
-            Rectangle r = stars.get(i);
+        for (Rectangle r : stars) {
             batch.draw(star, r.getX(), r.getY(), r.getWidth(), r.getHeight());
         }
-        for (int i = 0; i < obstacles.size(); i++) {
-            GameObject2D go2d = obstacles.get(i);
-            batch.draw(go2d.getNextTexture(frame), go2d.x, go2d.y, go2d.width / 2, go2d.height / 2, go2d.width, go2d.height, go2d.scale, go2d.scale, go2d.rotation);
+        GameObject2D planet = planets[currentPlanet];
+        Rectangle r1 = planet.getRect();
+        batch.draw(planet.getNextTexture(frame, paused), r1.getX(), r1.getY(), r1.getWidth(), r1.getHeight());
+        for (GameObject2D go2d : obstacles) {
+            batch.draw(go2d.getNextTexture(frame, paused), go2d.x, go2d.y, go2d.width / 2,
+                    go2d.height / 2, go2d.width, go2d.height, go2d.scale, go2d.scale, go2d.rotation);
 
         }
-        batch.draw(plane1.getPreviousTexture(frame), plane1.x, plane1.y, plane1.width / 2, plane1.height / 2, plane1.width, plane1.height, plane1.scale, plane1.scale, -90f);
-        batch.draw(plane2.getPreviousTexture(frame), plane2.x, plane2.y, plane2.width / 2, plane2.height / 2, plane2.width, plane2.height, plane2.scale, plane2.scale, -90f);
+        batch.draw(plane1.getPreviousTexture(frame, paused), plane1.x, plane1.y,
+                plane1.width / 2, plane1.height / 2, plane1.width, plane1.height, plane1.scale,
+                plane1.scale, -90f);
+        batch.draw(plane2.getPreviousTexture(frame, paused), plane2.x, plane2.y,
+                plane2.width / 2, plane2.height / 2, plane2.width, plane2.height, plane2.scale,
+                plane2.scale, -90f);
         GlyphLayout g = new GlyphLayout(font, Integer.toString((int) score));
         font.setColor(Color.WHITE);
         font.draw(batch, Integer.toString((int) score), 1920 / 2 - g.width / 2, 1080 / 14 * 13 - g.height / 2);
         if (!paused) {
-
-
             if (up) {
                 plane1.y += speed;
                 plane2.y -= speed;
@@ -151,9 +168,17 @@ public class Main extends ApplicationAdapter implements InputProcessor {
             }
             counter1 += difficulty += MathUtils.random(difficulty * 10);
             if (counter1 >= 500) {
-                obstacles.add(new GameObject2D(1920, 8 + MathUtils.random(1080), new TextureRegion(asteroid), 8, 8, 60, 4f, MathUtils.random(60), MathUtils.random(-0.1f, 0.1f)));
+                obstacles.add(new GameObject2D(1920, 8 + MathUtils.random(1080),
+                        new TextureRegion(asteroid), 8, 8, 12, 4f,
+                        MathUtils.random(60), MathUtils.random(-0.1f, 0.1f)));
                 counter1 %= 500;
             }
+            planet.x-=speed;
+            if (planet.x <= -100 * planet.scale){
+                planet.x = 1920+ (100 * planet.scale) ;
+                currentPlanet++;
+            }
+            planet.update();
             ArrayList<GameObject2D> remove = new ArrayList<>();
             for (int i = 0; i < obstacles.size(); i++) {
                 GameObject2D go2d = obstacles.get(i);

@@ -41,45 +41,31 @@ public class GameObject2D {
 		this.rotation=rotation;
 		runit=rotation;
 	}
-	public TextureRegion getNextTexture(long i) {
-		if (prev==i) {
-			xcounter--;
-			if (xcounter<=0) {
-				ycounter--;
-				xcounter=xmax-1;
-				if(ycounter<0) ycounter=ymax-1;
-			}
-		}
+	public TextureRegion getNextTexture(long i,boolean paused) {
 		TextureRegion tr=new TextureRegion(texture, (int)(width*xcounter), (int)(height*ycounter), (int)width, (int)height);
-		if((double)i %(60d/fps)==0)
-			xcounter++;
-		if (xcounter>=xmax) {
-			ycounter++;
-			xcounter=0;
-			ycounter%=ymax;
-		}
-		prev=i;
-		return(tr);
-	}
-	public TextureRegion getPreviousTexture(long i) {
-		if (prev==i) {
-			xcounter++;
+		if(!paused){
+			if((double)i %(60f/fps)==0)
+				xcounter++;
 			if (xcounter>=xmax) {
 				ycounter++;
 				xcounter=0;
 				ycounter%=ymax;
-			}
 		}
+		}
+		return(tr);
+	}
+	public TextureRegion getPreviousTexture(long i, boolean paused) {
 		TextureRegion tr=new TextureRegion(texture, (int)(width*xcounter), (int)(height*ycounter), (int)width, (int)height);
-		if((double)i %(60d/fps)==0)
-			xcounter--;
-		if (xcounter<=0) {
-			ycounter--;
-			xcounter=xmax-1;
-			if(ycounter<0) ycounter=ymax-1;
+		if (!paused){
+			if((double)i %(60d/fps)==0)
+				xcounter--;
+			if (xcounter<=0) {
+				ycounter--;
+				xcounter=xmax-1;
+				if(ycounter<0) ycounter=ymax-1;
+				}
 //System.out.println(xcounter+":"+ycounter);
 		}
-		prev=i;
 		return(tr);
 	}
 	public void update(){
