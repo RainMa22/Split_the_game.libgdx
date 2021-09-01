@@ -2,8 +2,9 @@ package me.rainma22.gdx;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Disposable;
 
-public class GameObject2D {
+public class GameObject2D implements Disposable {
 	long prev=-1;
 	float x,y,z;
 	TextureRegion texture;
@@ -85,5 +86,11 @@ public class GameObject2D {
 	}
 	public Rectangle getRect() {
 		return rect;
+	}
+
+	@Override
+	public void dispose() {
+		texture=null;
+		rect= null;
 	}
 }

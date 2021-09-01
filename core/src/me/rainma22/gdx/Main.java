@@ -21,7 +21,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class Main extends ApplicationAdapter implements InputProcessor {
+public class Main extends ApplicationAdapter implements InputProcessor{
+    float prefWidth,prefHeight;
     SpriteBatch batch;
     Texture img, star, asteroid;
     BitmapFont font;
@@ -31,6 +32,7 @@ public class Main extends ApplicationAdapter implements InputProcessor {
     boolean up, paused, died;
     Texture pauseBackground;
     GameObject2D explosion;
+    Texture pause;
     OrthographicCamera camera;
     ArrayList<Rectangle> stars;
     ArrayList<GameObject2D> obstacles;
@@ -43,16 +45,29 @@ public class Main extends ApplicationAdapter implements InputProcessor {
 
     @Override
     public void create() {
-        camera = new OrthographicCamera(1920f, 1080f);
-        camera.setToOrtho(false, 1920f, 1080f);
-        //camera=new OrthographicCamera(MathUtils.round(2*(1920f/Gdx.graphics.getWidth())), MathUtils.round(2*(1080f/Gdx.graphics.getHeight())));
+        float ratio= Gdx.graphics.getWidth()/(float)Gdx.graphics.getHeight();
+        if (ratio == 2){
+            prefWidth=2160;prefHeight=1080;
+        }else if(ratio == 19/9f) {
+            prefWidth = 2280;
+            prefHeight = 2340;
+        }else if(ratio == 19.5/9f){
+            prefWidth =2340;
+            prefHeight = 1080;
+        }else{
+            prefWidth=1920;prefHeight=1080;
+        }
+        camera = new OrthographicCamera(prefWidth, prefHeight);
+        camera.setToOrtho(false, prefWidth, prefHeight);
+        //camera=new OrthographicCamera(MathUtils.round(2*(prefWidth/Gdx.graphics.getWidth())), MathUtils.round(2*(prefHeight/Gdx.graphics.getHeight())));
         //camera=new OrthographicCamera();
+        pause= new Texture("pause.png");
         camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
-        //resize(MathUtils.round(1920*(1920f/Gdx.graphics.getWidth())), MathUtils.round(1080*(1080f/Gdx.graphics.getHeight())));
+        //resize(MathUtils.round(prefWidth*(prefWidth/Gdx.graphics.getWidth())), MathUtils.round(prefHeight*(prefHeight/Gdx.graphics.getHeight())));
         batch = new SpriteBatch();
         img = new Texture("Shooter_SpriteSheet.png");
         asteroid = new Texture("Asteroid.png");
-        explosion = new GameObject2D(0,0, new TextureRegion(new Texture("explosion.png")), 32, 32, 1, 5f);
+        explosion = new GameObject2D(0, 0, new TextureRegion(new Texture("explosion.png")), 32, 32, 1, 5f);
         Pixmap pixmap = new Pixmap(1, 1, Format.RGBA4444);
         pixmap.setColor(1, 1, 1, 1);
         pixmap.fill();
@@ -60,16 +75,16 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         stars = new ArrayList<Rectangle>(500);
         for (int i = 0; i < 500; i++) {
             float size = MathUtils.random(1, 4);
-            stars.add(new Rectangle((float) (Math.random() * 1920 + 0.5f), (float) (Math.random() * 1080 + 0.5f), size, size));
+            stars.add(new Rectangle((float) (Math.random() * prefWidth + 0.5f), (float) (Math.random() * prefHeight + 0.5f), size, size));
         }
         pixmap.setColor(0, 0, 0, 0.58823529411f);
         pixmap.fill();
         pauseBackground = new Texture(pixmap);
         obstacles = new ArrayList<>();
-        plane1 = new GameObject2D((1920 / 15f - (17f / 2)), (1080 / 2f - (17 / 2f)),
+        plane1 = new GameObject2D((prefWidth / 15f - (17f / 2)), (prefHeight / 2f - (17 / 2f)),
                 new TextureRegion(img, 0, 17 * 2 - 1, 17 * 3, 17),
                 17, 17, 3, 5f);
-        plane2 = new GameObject2D((1920 / 15f - (17f / 2)), (1080 / 2f - (17 / 2f)),
+        plane2 = new GameObject2D((prefWidth / 15f - (17f / 2)), (prefHeight / 2f - (17 / 2f)),
                 new TextureRegion(img, 17 * 3 - 1, 17 * 2 - 1,
                         17 * 3, 17), 17, 17, 3, 5f);
         frame = 0;
@@ -78,30 +93,32 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         floatCounter = 1;
         counter1 = 0;
         score = 0;
-        paused = false;
+        paused = true;
         died = false;
         up = true;
         font = new BitmapFont(Gdx.files.internal("Fonts/Ubuntu.fnt"));
         selected = 0;
-        fontColliders = new LinkedHashMap<>(0);
+        fontColliders = new LinkedHashMap<>(3);
         GlyphLayout g = new GlyphLayout(font, "Resume");
-        fontColliders.put("Resume", new Rectangle(1920 / 2 - g.width / 2, 1080 / 6 * 5 - g.height / 2, g.width, g.height));
+        fontColliders.put("Resume", new Rectangle(prefWidth / 2 - g.width / 2, prefHeight / 6 * 5 - g.height / 2, g.width, g.height));
         g = new GlyphLayout(font, "Restart");
-        fontColliders.put("Restart", new Rectangle(1920 / 2 - g.width / 2, 1080 / 6 * 3 - g.height / 2, g.width, g.height));
+        fontColliders.put("Restart", new Rectangle(prefWidth / 2 - g.width / 2, prefHeight / 6 * 3 - g.height / 2, g.width, g.height));
         g = new GlyphLayout(font, "Exit");
-        fontColliders.put("Exit", new Rectangle(1920 / 2 - g.width / 2, 1080 / 6 * 1 - g.height / 2, g.width, g.height));
-        sfx= Gdx.audio.newMusic(Gdx.files.internal("SFX/0.mp3"));
+        fontColliders.put("Exit", new Rectangle(prefWidth / 2 - g.width / 2, prefHeight / 6 * 1 - g.height / 2, g.width, g.height));
+        sfx = Gdx.audio.newMusic(Gdx.files.internal("SFX/0.mp3"));
         FileHandle[] handles = Gdx.files.internal("MP3").list();
-        musics= new Music[handles.length];
+        musics = new Music[handles.length];
         for (int i = 0; i < handles.length; i++) {
-            musics[i]=Gdx.audio.newMusic(handles[i]);
+            musics[i] = Gdx.audio.newMusic(handles[i]);
         }
         planets = new GameObject2D[9];
-        float[] plantScales= new float[]{10,2,3,5,4,6,15,6,3};
-        for(int i = 0; i < 9; i++){
-            planets[i]=new GameObject2D(1920,MathUtils.random((1080-(100*plantScales[i]))/2f,(100*plantScales[i])/2f),
-                    new TextureRegion(new Texture("planet"+i+".png")),100,
-                    100 ,12 ,plantScales[i]);
+        float[] plantScales = new float[]{10, 2, 3, 5, 4,6, 6, 6, 3};
+        for (int i = 0; i < 9; i++) {
+            Texture Planet=new Texture("planet" + i + ".png");
+            int height=Planet.getHeight();
+            planets[i] = new GameObject2D(prefWidth, MathUtils.random((prefHeight - (height * plantScales[i])) / 2f, (height * plantScales[i]) / 2f),
+                    new TextureRegion(Planet), height,
+                    height, 12, plantScales[i]);
         }
         currentMusic = 0;
         currentPlanet = 0;
@@ -114,9 +131,12 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         if (!musics[currentMusic].isPlaying()) Timer.post(new Timer.Task() {
             @Override
             public void run() {
+                musics[currentMusic].setVolume(0);
                 musics[currentMusic].stop();
                 musics[currentMusic].setPosition(0);
                 currentMusic++;
+                musics[currentMusic].setPosition(0);
+                musics[currentMusic].setVolume(100);
                 musics[currentMusic].play();
             }
         });
@@ -144,16 +164,16 @@ public class Main extends ApplicationAdapter implements InputProcessor {
                 plane2.scale, -90f);
         GlyphLayout g = new GlyphLayout(font, Integer.toString((int) score));
         font.setColor(Color.WHITE);
-        font.draw(batch, Integer.toString((int) score), 1920 / 2 - g.width / 2, 1080 / 14 * 13 - g.height / 2);
+        font.draw(batch, Integer.toString((int) score), prefWidth / 2 - g.width / 2, prefHeight / 14 * 13 - g.height / 2);
         if (!paused) {
             if (up) {
                 plane1.y += speed;
                 plane2.y -= speed;
-                up = !((plane1.y + (plane1.height * plane1.scale) / 2f) + 1 >= 1080);
+                up = !((plane1.y + (plane1.height * plane1.scale) / 2f) + 1 >= prefHeight);
             } else {
                 plane1.y -= speed;
                 plane2.y += speed;
-                up = ((plane2.y + (plane2.height * plane2.scale) / 2f) + 1 >= 1080);
+                up = ((plane2.y + (plane2.height * plane2.scale) / 2f) + 1 >= prefHeight);
             }
             plane1.update();
             plane2.update();
@@ -162,21 +182,22 @@ public class Main extends ApplicationAdapter implements InputProcessor {
                 //batch.draw(star, r.getX(), r.getY(), r.getWidth(), r.getHeight());
                 r.x -= r.getWidth() * speed / 8;
                 if (r.x <= 0) {
-                    r.x = 1920;
+                    r.x = prefWidth;
                 }
                 stars.set(i, r);
             }
             counter1 += difficulty += MathUtils.random(difficulty * 10);
             if (counter1 >= 500) {
-                obstacles.add(new GameObject2D(1920, 8 + MathUtils.random(1080),
+                obstacles.add(new GameObject2D((int) (prefWidth+0.5f), (int) (8 + MathUtils.random(prefHeight)),
                         new TextureRegion(asteroid), 8, 8, 12, 4f,
                         MathUtils.random(60), MathUtils.random(-0.1f, 0.1f)));
                 counter1 %= 500;
             }
-            planet.x-=speed;
-            if (planet.x <= -100 * planet.scale){
-                planet.x = 1920+ (100 * planet.scale) ;
+            planet.x -= speed;
+            if (planet.x <= -planet.height * planet.scale) {
+                planet.x = prefWidth + (planet.height * planet.scale);
                 currentPlanet++;
+                currentPlanet%=9;
             }
             planet.update();
             ArrayList<GameObject2D> remove = new ArrayList<>();
@@ -188,18 +209,18 @@ public class Main extends ApplicationAdapter implements InputProcessor {
                 if (go2d.getRect().overlaps(plane1.getRect())) {
                     explosion.x = plane1.x;
                     explosion.y = plane1.y;
-                    plane1 =explosion;
+                    plane1 = explosion;
                     died = true;
                     paused = true;
                     sfx.stop();
                     sfx.setPosition(0);
                     sfx.play();
-                }else if( go2d.getRect().overlaps(plane2.getRect())){
+                } else if (go2d.getRect().overlaps(plane2.getRect())) {
                     explosion.x = plane2.x;
                     explosion.y = plane2.y;
-                    plane2 =explosion;
+                    plane2 = explosion;
                     died = true;
-                    paused =true;
+                    paused = true;
                     sfx.stop();
                     sfx.setPosition(0);
                     sfx.play();
@@ -216,8 +237,12 @@ public class Main extends ApplicationAdapter implements InputProcessor {
             difficulty = 2.5f * floatCounter;
             speed = difficulty * 6;
             score += difficulty;
+            batch.draw(new TextureRegion(pause),0,(camera.viewportHeight-pause.getWidth()*5f),
+                    0,(camera.viewportHeight-pause.getWidth()*5f),
+                    pause.getWidth()*5f,pause.getHeight()*5f,1,1,0);
+            //batch.draw(new TextureRegion(pause),0,(camera.viewportHeight-pause.getWidth()*5f));
         } else {
-            batch.draw(pauseBackground, 0, 0, 1920, 1080);
+            batch.draw(pauseBackground, 0, 0, prefWidth, prefHeight);
             int i = 0;
             for (Map.Entry<String, Rectangle> entry : fontColliders.entrySet()) {
                 String key = entry.getKey();
@@ -236,20 +261,30 @@ public class Main extends ApplicationAdapter implements InputProcessor {
 
     @Override
     public void dispose() {
-        batch.dispose();
-        img.dispose();
-        star.dispose();
-        asteroid.dispose();
-        pauseBackground.dispose();
-        sfx.dispose();
-        for (Music music:musics) {
+        GameObject2D[] planets;
+        batch.dispose();img.dispose();star.dispose();asteroid.dispose(); font.dispose();
+        plane1.dispose();plane2.dispose();
+        pauseBackground.dispose();explosion.dispose();
+        pause.dispose();
+        for (GameObject2D go2d:obstacles) {
+            go2d.dispose();
+        }
+        for (Music music : musics) {
             music.dispose();
         }
+        sfx.dispose();
+        System.gc();
     }
 
+    public boolean restart(){
+        this.dispose();
+        this.create();
+        this.paused=false;
+        return true;
+    }
     @Override
     public boolean keyDown(int keycode) {
-        if(keycode == Input.Keys.N){
+        if (keycode == Input.Keys.N) {
             Timer.post(new Timer.Task() {
                 @Override
                 public void run() {
@@ -272,7 +307,7 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         } else {
             switch (keycode) {
                 case Input.Keys.ESCAPE:
-                    if (died){
+                    if (died) {
                         this.dispose();
                         this.create();
                         return true;
@@ -289,17 +324,14 @@ public class Main extends ApplicationAdapter implements InputProcessor {
                     return true;
                 case Input.Keys.ENTER:
                     if (selected == 0) {
-                        if (died){
-                            this.dispose();
-                            this.create();
-                            return true;
+                        if (died) {
+                            selected =1;
+                            return keyDown(keycode);
                         }
                         paused = false;
                         return true;
                     } else if (selected == 1) {
-                        this.dispose();
-                        this.create();
-                        return true;
+                        return restart();
                     } else {
                         Gdx.app.exit();
                     }
@@ -320,34 +352,32 @@ public class Main extends ApplicationAdapter implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        if (button == 0) {
-            if (selected == 0) {
-                if (died){
-                    this.dispose();
-                    this.create();
-                    return true;
-                }
-                paused = false;
-                return true;
-            } else if (selected == 1) {
-                this.dispose();
-                this.create();
-                return true;
-            } else {
-                Gdx.app.exit();
-            }
+        if (!paused){
+            up = !up;
+            return true;
         }
         return false;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if (paused) {
+            if (mouseMoved(screenX, screenY)) return keyDown(Input.Keys.ENTER);
+        }else{
+            Vector3 mousePos = new Vector3(screenX, screenY, 0);
+            mousePos = camera.unproject(mousePos);
+            Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 100, 100);
+            if (mouse.overlaps(new Rectangle(0,(camera.viewportHeight-pause.getWidth()*5f),17*5,17*5))){
+                paused= true;
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
-        return false;
+        return mouseMoved(screenX,screenY);
     }
 
     @Override
@@ -355,7 +385,7 @@ public class Main extends ApplicationAdapter implements InputProcessor {
         if (paused) {
             Vector3 mousePos = new Vector3(screenX, screenY, 0);
             mousePos = camera.unproject(mousePos);
-            Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 10, 10);
+            Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 100, 100);
             int i = 0;
             for (Map.Entry<String, Rectangle> entry : fontColliders.entrySet()) {
                 Rectangle rect = entry.getValue();
@@ -373,4 +403,5 @@ public class Main extends ApplicationAdapter implements InputProcessor {
     public boolean scrolled(float amountX, float amountY) {
         return false;
     }
+
 }
