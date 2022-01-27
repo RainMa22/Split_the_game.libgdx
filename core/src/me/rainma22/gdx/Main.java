@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Main extends ApplicationAdapter implements InputProcessor{
+    int stage;
     float prefWidth,prefHeight;
     SpriteBatch batch;
     Texture img, star, asteroid;
@@ -42,10 +44,14 @@ public class Main extends ApplicationAdapter implements InputProcessor{
     Music sfx;
     int currentMusic, currentPlanet;
     GameObject2D[] planets;
-
+    ShapeRenderer shapeRenderer;
+    StartScreen startScreen;
     @Override
     public void create() {
+
         float ratio= Gdx.graphics.getWidth()/(float)Gdx.graphics.getHeight();
+        shapeRenderer=new ShapeRenderer();
+        shapeRenderer.setAutoShapeType(true);
         if (ratio == 2){
             prefWidth=2160;prefHeight=1080;
         }else if(ratio == 19/9f) {
@@ -96,7 +102,8 @@ public class Main extends ApplicationAdapter implements InputProcessor{
         paused = true;
         died = false;
         up = true;
-        font = new BitmapFont(Gdx.files.internal("Fonts/Ubuntu.fnt"));
+        font = new BitmapFont(Gdx.files.internal("Fonts/Ubuntu.fnt"),false);
+        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         selected = 0;
         fontColliders = new LinkedHashMap<>(3);
         GlyphLayout g = new GlyphLayout(font, "Resume");
@@ -122,12 +129,20 @@ public class Main extends ApplicationAdapter implements InputProcessor{
         }
         currentMusic = 0;
         currentPlanet = 0;
+        stage=0;
         musics[currentMusic].play();
+        startScreen=new StartScreen(this);
         Gdx.input.setInputProcessor(this);
     }
 
     @Override
     public void render() {
+        Gdx.gl.glClearColor(0, 0, 0.11764705882f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+        camera.update();
+        batch.setProjectionMatrix(camera.combined);
+        shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
+
         if (!musics[currentMusic].isPlaying()) Timer.post(new Timer.Task() {
             @Override
             public void run() {
@@ -140,119 +155,121 @@ public class Main extends ApplicationAdapter implements InputProcessor{
                 musics[currentMusic].play();
             }
         });
-        camera.update();
-        batch.setProjectionMatrix(camera.combined);
-        batch.begin();
-        Gdx.gl.glClearColor(0, 0, 0.11764705882f, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        for (Rectangle r : stars) {
-            batch.draw(star, r.getX(), r.getY(), r.getWidth(), r.getHeight());
+        if(stage ==0){
+            startScreen.draw();
         }
-        GameObject2D planet = planets[currentPlanet];
-        Rectangle r1 = planet.getRect();
-        batch.draw(planet.getNextTexture(frame, paused), r1.getX(), r1.getY(), r1.getWidth(), r1.getHeight());
-        for (GameObject2D go2d : obstacles) {
-            batch.draw(go2d.getNextTexture(frame, paused), go2d.x, go2d.y, go2d.width / 2,
-                    go2d.height / 2, go2d.width, go2d.height, go2d.scale, go2d.scale, go2d.rotation);
+        if(stage ==1 ) {
+            batch.begin();
+            for (Rectangle r : stars) {
+                batch.draw(star, r.getX(), r.getY(), r.getWidth(), r.getHeight());
+            }
+            GameObject2D planet = planets[currentPlanet];
+            Rectangle r1 = planet.getRect();
+            batch.draw(planet.getNextTexture(frame, paused), r1.getX(), r1.getY(), r1.getWidth(), r1.getHeight());
+            for (GameObject2D go2d : obstacles) {
+                batch.draw(go2d.getNextTexture(frame, paused), go2d.x, go2d.y, go2d.width / 2,
+                        go2d.height / 2, go2d.width, go2d.height, go2d.scale, go2d.scale, go2d.rotation);
 
-        }
-        batch.draw(plane1.getPreviousTexture(frame, paused), plane1.x, plane1.y,
-                plane1.width / 2, plane1.height / 2, plane1.width, plane1.height, plane1.scale,
-                plane1.scale, -90f);
-        batch.draw(plane2.getPreviousTexture(frame, paused), plane2.x, plane2.y,
-                plane2.width / 2, plane2.height / 2, plane2.width, plane2.height, plane2.scale,
-                plane2.scale, -90f);
-        GlyphLayout g = new GlyphLayout(font, Integer.toString((int) score));
-        font.setColor(Color.WHITE);
-        font.draw(batch, Integer.toString((int) score), prefWidth / 2 - g.width / 2, prefHeight / 14 * 13 - g.height / 2);
-        if (!paused) {
-            if (up) {
-                plane1.y += speed;
-                plane2.y -= speed;
-                up = !((plane1.y + (plane1.height * plane1.scale) / 2f) + 1 >= prefHeight);
+            }
+            batch.draw(plane1.getPreviousTexture(frame, paused), plane1.x, plane1.y,
+                    plane1.width / 2, plane1.height / 2, plane1.width, plane1.height, plane1.scale,
+                    plane1.scale, -90f);
+            batch.draw(plane2.getPreviousTexture(frame, paused), plane2.x, plane2.y,
+                    plane2.width / 2, plane2.height / 2, plane2.width, plane2.height, plane2.scale,
+                    plane2.scale, -90f);
+            /*GlyphLayout g = new GlyphLayout(font, Integer.toString((int) score));
+            font.setColor(Color.WHITE);
+            font.draw(batch, Integer.toString((int) score), prefWidth / 2 - g.width / 2, prefHeight / 14 * 13 - g.height / 2);*/
+            Utils.drawText(prefWidth/2,prefHeight/14*13,Color.WHITE,Integer.toString((int)score),font,1f,batch,true);
+            if (!paused) {
+                if (up) {
+                    plane1.y += speed;
+                    plane2.y -= speed;
+                    up = !((plane1.y + (plane1.height * plane1.scale) / 2f) + 1 >= prefHeight);
+                } else {
+                    plane1.y -= speed;
+                    plane2.y += speed;
+                    up = ((plane2.y + (plane2.height * plane2.scale) / 2f) + 1 >= prefHeight);
+                }
+                plane1.update();
+                plane2.update();
+                for (int i = 0; i < stars.size(); i++) {
+                    Rectangle r = stars.get(i);
+                    //batch.draw(star, r.getX(), r.getY(), r.getWidth(), r.getHeight());
+                    r.x -= r.getWidth() * speed / 8;
+                    if (r.x <= 0) {
+                        r.x = prefWidth;
+                    }
+                    stars.set(i, r);
+                }
+                counter1 += difficulty += MathUtils.random(difficulty * 10);
+                if (counter1 >= 500) {
+                    obstacles.add(new GameObject2D((int) (prefWidth + 0.5f), (int) (8 + MathUtils.random(prefHeight)),
+                            new TextureRegion(asteroid), 8, 8, 12, 4f,
+                            MathUtils.random(60), MathUtils.random(-0.1f, 0.1f)));
+                    counter1 %= 500;
+                }
+                planet.x -= speed;
+                if (planet.x <= -planet.height * planet.scale) {
+                    planet.x = prefWidth + (planet.height * planet.scale);
+                    currentPlanet++;
+                    currentPlanet %= 9;
+                }
+                planet.update();
+                ArrayList<GameObject2D> remove = new ArrayList<>();
+                for (int i = 0; i < obstacles.size(); i++) {
+                    GameObject2D go2d = obstacles.get(i);
+                    go2d.x -= speed;
+                    go2d.rotation += go2d.runit;
+                    go2d.update();
+                    if (go2d.getRect().overlaps(plane1.getRect())) {
+                        explosion.x = plane1.x;
+                        explosion.y = plane1.y;
+                        plane1 = explosion;
+                        died = true;
+                        paused = true;
+                        sfx.stop();
+                        sfx.setPosition(0);
+                        sfx.play();
+                    } else if (go2d.getRect().overlaps(plane2.getRect())) {
+                        explosion.x = plane2.x;
+                        explosion.y = plane2.y;
+                        plane2 = explosion;
+                        died = true;
+                        paused = true;
+                        sfx.stop();
+                        sfx.setPosition(0);
+                        sfx.play();
+                    }
+                    if (go2d.x <= -16) {
+                        remove.add(go2d);
+                        break;
+                    }
+                    obstacles.set(i, go2d);
+                }
+                obstacles.removeAll(remove);
+                frame++;
+                floatCounter += 0.00002777777f;
+                difficulty = 2.5f * floatCounter;
+                speed = difficulty * 6;
+                score += difficulty;
+                batch.draw(new TextureRegion(pause), 0, (camera.viewportHeight - pause.getWidth() * 5f),
+                        0, (camera.viewportHeight - pause.getWidth() * 5f),
+                        pause.getWidth() * 5f, pause.getHeight() * 5f, 1, 1, 0);
+                //batch.draw(new TextureRegion(pause),0,(camera.viewportHeight-pause.getWidth()*5f));
             } else {
-                plane1.y -= speed;
-                plane2.y += speed;
-                up = ((plane2.y + (plane2.height * plane2.scale) / 2f) + 1 >= prefHeight);
-            }
-            plane1.update();
-            plane2.update();
-            for (int i = 0; i < stars.size(); i++) {
-                Rectangle r = stars.get(i);
-                //batch.draw(star, r.getX(), r.getY(), r.getWidth(), r.getHeight());
-                r.x -= r.getWidth() * speed / 8;
-                if (r.x <= 0) {
-                    r.x = prefWidth;
+                batch.draw(pauseBackground, 0, 0, prefWidth, prefHeight);
+                int i = 0;
+                for (Map.Entry<String, Rectangle> entry : fontColliders.entrySet()) {
+                    String key = entry.getKey();
+                    Rectangle rect = entry.getValue();
+                    if (selected == i) font.setColor(new Color(47f / 256, 214f / 256, 211f / 256, 1));
+                    font.draw(batch, key, rect.x, rect.y);
+                    font.setColor(Color.WHITE);
+                    i++;
                 }
-                stars.set(i, r);
-            }
-            counter1 += difficulty += MathUtils.random(difficulty * 10);
-            if (counter1 >= 500) {
-                obstacles.add(new GameObject2D((int) (prefWidth+0.5f), (int) (8 + MathUtils.random(prefHeight)),
-                        new TextureRegion(asteroid), 8, 8, 12, 4f,
-                        MathUtils.random(60), MathUtils.random(-0.1f, 0.1f)));
-                counter1 %= 500;
-            }
-            planet.x -= speed;
-            if (planet.x <= -planet.height * planet.scale) {
-                planet.x = prefWidth + (planet.height * planet.scale);
-                currentPlanet++;
-                currentPlanet%=9;
-            }
-            planet.update();
-            ArrayList<GameObject2D> remove = new ArrayList<>();
-            for (int i = 0; i < obstacles.size(); i++) {
-                GameObject2D go2d = obstacles.get(i);
-                go2d.x -= speed;
-                go2d.rotation += go2d.runit;
-                go2d.update();
-                if (go2d.getRect().overlaps(plane1.getRect())) {
-                    explosion.x = plane1.x;
-                    explosion.y = plane1.y;
-                    plane1 = explosion;
-                    died = true;
-                    paused = true;
-                    sfx.stop();
-                    sfx.setPosition(0);
-                    sfx.play();
-                } else if (go2d.getRect().overlaps(plane2.getRect())) {
-                    explosion.x = plane2.x;
-                    explosion.y = plane2.y;
-                    plane2 = explosion;
-                    died = true;
-                    paused = true;
-                    sfx.stop();
-                    sfx.setPosition(0);
-                    sfx.play();
-                }
-                if (go2d.x <= -16) {
-                    remove.add(go2d);
-                    break;
-                }
-                obstacles.set(i, go2d);
-            }
-            obstacles.removeAll(remove);
-            frame++;
-            floatCounter += 0.00002777777f;
-            difficulty = 2.5f * floatCounter;
-            speed = difficulty * 6;
-            score += difficulty;
-            batch.draw(new TextureRegion(pause),0,(camera.viewportHeight-pause.getWidth()*5f),
-                    0,(camera.viewportHeight-pause.getWidth()*5f),
-                    pause.getWidth()*5f,pause.getHeight()*5f,1,1,0);
-            //batch.draw(new TextureRegion(pause),0,(camera.viewportHeight-pause.getWidth()*5f));
-        } else {
-            batch.draw(pauseBackground, 0, 0, prefWidth, prefHeight);
-            int i = 0;
-            for (Map.Entry<String, Rectangle> entry : fontColliders.entrySet()) {
-                String key = entry.getKey();
-                Rectangle rect = entry.getValue();
-                if (selected == i) font.setColor(new Color(47f / 256, 214f / 256, 211f / 256, 1));
-                font.draw(batch, key, rect.x, rect.y);
-                font.setColor(Color.WHITE);
-                i++;
-            }
 
+            }
         }
 
         batch.end();
@@ -261,7 +278,6 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 
     @Override
     public void dispose() {
-        GameObject2D[] planets;
         batch.dispose();img.dispose();star.dispose();asteroid.dispose(); font.dispose();
         plane1.dispose();plane2.dispose();
         pauseBackground.dispose();explosion.dispose();
@@ -382,19 +398,21 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
-        if (paused) {
-            Vector3 mousePos = new Vector3(screenX, screenY, 0);
-            mousePos = camera.unproject(mousePos);
-            Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 100, 100);
-            int i = 0;
-            for (Map.Entry<String, Rectangle> entry : fontColliders.entrySet()) {
-                Rectangle rect = entry.getValue();
-                if (mouse.overlaps(rect)) selected = i;
-                selected %= 3;
-                i++;
-            }
-            return true;
+        if (stage==1) {
+            if (paused) {
+                Vector3 mousePos = new Vector3(screenX, screenY, 0);
+                mousePos = camera.unproject(mousePos);
+                Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 100, 100);
+                int i = 0;
+                for (Map.Entry<String, Rectangle> entry : fontColliders.entrySet()) {
+                    Rectangle rect = entry.getValue();
+                    if (mouse.overlaps(rect)) selected = i;
+                    selected %= 3;
+                    i++;
+                }
+                return true;
 
+            }
         }
         return false;
     }
