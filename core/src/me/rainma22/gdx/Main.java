@@ -181,6 +181,7 @@ public class Main extends ApplicationAdapter implements InputProcessor{
             font.setColor(Color.WHITE);
             font.draw(batch, Integer.toString((int) score), prefWidth / 2 - g.width / 2, prefHeight / 14 * 13 - g.height / 2);*/
             Utils.drawText(prefWidth/2,prefHeight/14*13,Color.WHITE,Integer.toString((int)score),font,1f,batch,true);
+            batch.begin();
             if (!paused) {
                 if (up) {
                     plane1.y += speed;
@@ -270,9 +271,10 @@ public class Main extends ApplicationAdapter implements InputProcessor{
                 }
 
             }
+            batch.end();
         }
 
-        batch.end();
+
 
     }
 
@@ -300,57 +302,62 @@ public class Main extends ApplicationAdapter implements InputProcessor{
     }
     @Override
     public boolean keyDown(int keycode) {
-        if (keycode == Input.Keys.N) {
-            Timer.post(new Timer.Task() {
-                @Override
-                public void run() {
-                    musics[currentMusic].stop();
-                    musics[currentMusic].setPosition(0);
-                    currentMusic++;
-                    musics[currentMusic].play();
-                }
-            });
-            return true;
-        }
-        if (!paused) {
-            if (keycode == (Input.Keys.ESCAPE)) {
-                paused = true;
-                return true;
-            } else {
-                up = !up;
+        if(stage==0) {
+            return startScreen.keyDown(keycode);
+        }else if(stage==1){
+            if (keycode == Input.Keys.N) {
+                Timer.post(new Timer.Task() {
+                    @Override
+                    public void run() {
+                        musics[currentMusic].stop();
+                        musics[currentMusic].setPosition(0);
+                        currentMusic++;
+                        musics[currentMusic].play();
+                    }
+                });
                 return true;
             }
-        } else {
-            switch (keycode) {
-                case Input.Keys.ESCAPE:
-                    if (died) {
-                        this.dispose();
-                        this.create();
-                        return true;
-                    }
-                    paused = false;
+            if (!paused) {
+                if (keycode == (Input.Keys.ESCAPE)) {
+                    paused = true;
                     return true;
-                case Input.Keys.UP:
-                    selected--;
-                    selected %= 3;
+                } else {
+                    up = !up;
                     return true;
-                case Input.Keys.DOWN:
-                    selected++;
-                    selected %= 3;
-                    return true;
-                case Input.Keys.ENTER:
-                    if (selected == 0) {
+                }
+            } else {
+                switch (keycode) {
+                    case Input.Keys.ESCAPE:
                         if (died) {
-                            selected =1;
-                            return keyDown(keycode);
+                            this.dispose();
+                            this.create();
+                            return true;
                         }
                         paused = false;
                         return true;
-                    } else if (selected == 1) {
-                        return restart();
-                    } else {
-                        Gdx.app.exit();
-                    }
+                    case Input.Keys.UP:
+                        selected--;
+                        selected %= 3;
+                        return true;
+                    case Input.Keys.DOWN:
+                        selected++;
+                        selected %= 3;
+                        return true;
+                    case Input.Keys.ENTER:
+                        if (selected == 0) {
+                            if (died) {
+                                selected = 1;
+                                return keyDown(keycode);
+                            }
+                            paused = false;
+                            return true;
+                        } else if (selected == 1) {
+                            restart();stage=1;
+                            return true;
+                        } else {
+                            stage=0;
+                        }
+                }
             }
         }
         return false;
@@ -377,16 +384,20 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if (paused) {
-            if (mouseMoved(screenX, screenY)) return keyDown(Input.Keys.ENTER);
-        }else{
-            Vector3 mousePos = new Vector3(screenX, screenY, 0);
-            mousePos = camera.unproject(mousePos);
-            Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 100, 100);
-            if (mouse.overlaps(new Rectangle(0,(camera.viewportHeight-pause.getWidth()*5f),17*5,17*5))){
-                paused= true;
-                return true;
+        if (stage==1){
+            if (paused) {
+                if (mouseMoved(screenX, screenY)) return keyDown(Input.Keys.ENTER);
+            }else{
+                Vector3 mousePos = new Vector3(screenX, screenY, 0);
+                mousePos = camera.unproject(mousePos);
+                Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 100, 100);
+                if (mouse.overlaps(new Rectangle(0,(camera.viewportHeight-pause.getWidth()*5f),17*5,17*5))){
+                    paused= true;
+                    return true;
+                }
             }
+        }else if( stage==0){
+            if (mouseMoved(screenX, screenY)) return startScreen.keyDown(Input.Keys.ENTER);
         }
         return false;
     }
@@ -398,7 +409,9 @@ public class Main extends ApplicationAdapter implements InputProcessor{
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
-        if (stage==1) {
+        if(stage==0){
+            return startScreen.mouseMoved(screenX,screenY);
+        }else if (stage==1) {
             if (paused) {
                 Vector3 mousePos = new Vector3(screenX, screenY, 0);
                 mousePos = camera.unproject(mousePos);
