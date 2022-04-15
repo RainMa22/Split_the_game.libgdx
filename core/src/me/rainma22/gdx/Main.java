@@ -298,6 +298,7 @@ public class Main extends ApplicationAdapter implements InputProcessor{
         this.dispose();
         this.create();
         this.paused=false;
+        stage=1;
         return true;
     }
     @Override
@@ -352,7 +353,7 @@ public class Main extends ApplicationAdapter implements InputProcessor{
                             paused = false;
                             return true;
                         } else if (selected == 1) {
-                            restart();stage=1;
+                            restart();
                             return true;
                         } else {
                             stage=0;

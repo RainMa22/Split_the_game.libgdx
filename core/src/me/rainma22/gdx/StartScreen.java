@@ -12,18 +12,35 @@ import com.badlogic.gdx.math.Vector3;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static me.rainma22.gdx.Utils.drawButton;
-import static me.rainma22.gdx.Utils.drawText;
+import static me.rainma22.gdx.Utils.*;
 
 public class StartScreen {
     Main main;
-    String[] options = new String[]{"Exit","Options","Start"};
-    ArrayList<Rectangle> fontColliders=new ArrayList<>(3);
-    int selected = 0;
+    String[] options = new String[]{"Exit","Start"};
+    ArrayList<Button> buttons=new ArrayList<>();
+
     public StartScreen(Main main){
         this.main=main;
         for (int i = 0; i < options.length; i++) {
-            fontColliders.add(new Rectangle(main.prefWidth/13,main.prefHeight/(options.length+2)*(1+i), main.prefWidth/4,main.prefHeight/7));
+            Button btn=new Button(main.prefWidth/13,main.prefHeight/(options.length+2)*(1+i), main.prefWidth/4,main.prefHeight/(options.length+5),Color.WHITE,Color.CLEAR,
+                    new Color(47f / 256, 214f / 256, 211f / 256, 1),Color.CLEAR,options[i], main.font, 1.5f,false);
+            final Main finalMain=main;
+            final int finalI=i;
+            btn.setOnClickAction(new Runnable() {
+                @Override
+                public void run() {
+                    switch (options[finalI]){
+                        case "Exit":
+                            Gdx.app.exit();
+                            break;
+                        case "Options":
+                            break;
+                        case "Start":
+                            finalMain.restart();
+                }
+            }
+            });
+            buttons.add(btn);
         }
     }
     public void draw(){
@@ -45,35 +62,24 @@ public class StartScreen {
         Gdx.gl.glDisable(Gdx.gl.GL_BLEND);
         drawText(width/13*2,height/14*13,Color.WHITE,"Split!", font, 2f,batch,false);
         for (int i = 0; i < options.length; i++) {
-            if(selected==i){
-                drawButton(width/13,height/(options.length+2)*(1+i),width/4,height/7, new Color(47f / 256, 214f / 256, 211f / 256, 1),Color.CLEAR,options[i],font,1.5f,batch,shapeRenderer,false);
-            }else{
-                drawButton(width/13,height/(options.length+2)*(1+i),width/4,height/7, Color.WHITE,Color.CLEAR,options[i],font,1.5f,batch,shapeRenderer,false);
-            }
+            buttons.get(i).draw(batch,shapeRenderer);
         }
     }
     public boolean mouseMoved(float screenX,float screenY){
-        Vector3 mousePos = new Vector3(screenX, screenY, 0);
-        mousePos = main.camera.unproject(mousePos);
-        Rectangle mouse = new Rectangle(mousePos.x, mousePos.y, 100, 100);
-        for (int i = 0;i< options.length;i++) {
-            Rectangle rect = fontColliders.get(i);
-            if (mouse.overlaps(rect)) selected = i;
-            selected %= 3;
+        Rectangle mouse=getMouseRect(screenX,screenY,main.camera);
+        boolean prev=false;
+        for (int i = 0; i < options.length; i++) {
+            if (!prev) prev=buttons.get(i).mouseMoved(mouse);
+            else buttons.get(i).selected=false;
         }
         return true;
     }
     public boolean keyDown(int keycode) {
-        if(keycode== Input.Keys.ENTER){
-            switch (options[selected]){
-                case "Exit":
-                    Gdx.app.exit();
-                    break;
-                case "Options":
-                    break;
-                case "Start":
-                    main.stage=1;
+        if (keycode== Input.Keys.ENTER){
+            for (int i = 0; i < options.length; i++) {
+                buttons.get(i).onInteract();
             }
+            return true;
         }
         return false;
     }
